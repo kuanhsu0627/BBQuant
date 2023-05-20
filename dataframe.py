@@ -5,6 +5,7 @@ import numpy as np
 import operator
 from IPython.display import display
 
+
 class QuantDataFrame:
     """
     重新定義 DataFrame 運算元: +, -, *, /, >, <, ==, !=, >=, <=, &, |
@@ -12,6 +13,12 @@ class QuantDataFrame:
     """
     def __init__(self, data: pd.DataFrame):
         self.data = data
+
+    def __neg__(self):
+        """
+        ex. -df
+        """
+        return QuantDataFrame(-self.data)
 
     def __add__(self, other):
         """
@@ -270,7 +277,28 @@ class QuantDataFrame:
             other.data = other.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
             df = np.logical_or(self.data, other.data)
             return QuantDataFrame(df)
+
+    def shift(self, n):
+        """
+        將資料平移Ｎ天
+        """
+        df = self.data.shift(n)
+        return QuantDataFrame(df)
+
+    def maximum(self, n):
+        """
+        前Ｎ日最大值
+        """
+        df = self.data.rolling(n).max()
+        return QuantDataFrame(df)
         
+    def minimum(self, n):
+        """
+        前Ｎ日最小值
+        """
+        df = self.data.rolling(n).min()
+        return QuantDataFrame(df)
+    
     def average(self, n):
         """
         前Ｎ日平均值
@@ -303,10 +331,10 @@ class QuantDataFrame:
         """
         取每列數值中最小的前Ｎ筆
         """
-        df = self.data.astype(float).apply(lambda x: x.smallest(n), axis=1).reindex_like(self).notna()
+        df = self.data.astype(float).apply(lambda x: x.nsmallest(n), axis=1).reindex_like(self).notna()
         return QuantDataFrame(df)
     
-    def sustain(self, n=1):
+    def sustain(self, n):
         """
         條件持續滿足Ｎ天
         """

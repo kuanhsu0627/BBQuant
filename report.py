@@ -21,10 +21,12 @@ class QuantReport:
         """
         繪製淨值走勢圖
         """
-        ret = self.equity_table.strategy[-1]**(252/len(self.equity_table.index)) - 1
-        vol = self.payoff_table.strategy.std() * np.sqrt(252)
-        mdd = abs((self.equity_table.strategy / self.equity_table.strategy.cummax() - 1).min())
-        winRate = len([i for i in self.trade_table.ret.values if i > 0]) / len(self.trade_table.ret.values) if len(self.trade_table.ret.values) != 0 else 0.0
+        period = len(self.payoff_table.index)
+        totalRet = self.equity_table.Strategy[-1] - 1
+        ret = (1+totalRet)**(252/period) - 1 if totalRet > -1 else -((1-totalRet)**(252/period) - 1)
+        vol = self.payoff_table.Strategy.std() * np.sqrt(252)
+        mdd = abs((self.equity_table.Strategy / self.equity_table.Strategy.cummax() - 1).min())
+        winRate = len([i for i in self.trade_table.Return.values if i > 0]) / len(self.trade_table.Return.values) if len(self.trade_table.Return.values) != 0 else 0.0
         sharpe = (ret - self.rf) / vol if vol != 0 else 0.0
 
         ### 顯示中文字體
@@ -37,8 +39,8 @@ class QuantReport:
 
         plt.style.use('bmh')
         plt.figure(figsize=(12, 6), dpi=200)
-        plt.plot(self.equity_table.strategy, label='strategy')
-        plt.plot(self.equity_table.benchmark, label='benchmark')
+        plt.plot(self.equity_table.Strategy, label='strategy')
+        plt.plot(self.equity_table.Benchmark, label='benchmark')
         plt.legend(loc=4)
         plt.ylabel('Equity')
         plt.xlabel('Time')
@@ -59,24 +61,24 @@ class QuantReport:
         start = str(self.equity_table.index[0])[:10]
         end = str(self.equity_table.index[-1])[:10]
         period = len(self.payoff_table.index)
-        winPeriod = (self.payoff_table.strategy > 0).sum()
-        totalRet = self.equity_table.strategy[-1] - self.equity_table.strategy[0]
-        totalRetBM = self.equity_table.benchmark[-1] - self.equity_table.benchmark[0]
-        ret = self.equity_table.strategy[-1]**(252/len(self.equity_table.index)) - 1
-        retBM = self.equity_table.benchmark[-1]**(252/len(self.equity_table.index)) - 1
-        vol = self.payoff_table.strategy.std() * np.sqrt(252)
-        volNeg = self.payoff_table.strategy[self.payoff_table.strategy < 0].std() * np.sqrt(252) if vol != 0 else 0.0
-        mdd = abs((self.equity_table.strategy / self.equity_table.strategy.cummax() - 1).min())
-        tend = (self.equity_table.strategy / self.equity_table.strategy.cummax() - 1).idxmin()
-        tstart = self.equity_table.strategy.loc[:tend].idxmax()
+        winPeriod = (self.payoff_table.Strategy > 0).sum()
+        totalRet = self.equity_table.Strategy[-1] - 1
+        totalRetBM = self.equity_table.Benchmark[-1] - 1
+        ret = (1+totalRet)**(252/period) - 1 if totalRet > -1 else -((1-totalRet)**(252/period) - 1)
+        retBM = (1+totalRetBM)**(252/period) - 1 if totalRetBM > -1 else -((1-totalRetBM)**(252/period) - 1)
+        vol = self.payoff_table.Strategy.std() * np.sqrt(252)
+        volNeg = self.payoff_table.Strategy[self.payoff_table.Strategy < 0].std() * np.sqrt(252) if vol != 0 else 0.0
+        mdd = abs((self.equity_table.Strategy / self.equity_table.Strategy.cummax() - 1).min())
+        tend = (self.equity_table.Strategy / self.equity_table.Strategy.cummax() - 1).idxmin()
+        tstart = self.equity_table.Strategy.loc[:tend].idxmax()
         mddDuration = str(tend - tstart).split()[0]
-        trades = len(self.trade_table.ret.values)
-        winRate = len([i for i in self.trade_table.ret.values if i > 0]) / trades if trades != 0 else 0.0
-        bestTrade = np.nanmax(self.trade_table.ret.values) if trades !=0 else 0.0
-        worstTrade = np.nanmin(self.trade_table.ret.values) if trades !=0 else 0.0
-        avgTrade = np.nanmean(self.trade_table.ret.values) if trades !=0 else 0.0
-        profitFactor = sum([i for i in self.trade_table.ret.values if i > 0]) / abs(sum([i for i in self.trade_table.ret.values if i < 0])) if trades != 0 else 0.0
-        winLossRatio = np.mean([i for i in self.trade_table.ret.values if i > 0]) / abs(np.mean([i for i in self.trade_table.ret.values if i < 0])) if trades != 0 else 0.0
+        trades = len(self.trade_table.Return.values)
+        winRate = len([i for i in self.trade_table.Return.values if i > 0]) / trades if trades != 0 else 0.0
+        bestTrade = np.nanmax(self.trade_table.Return.values) if trades !=0 else 0.0
+        worstTrade = np.nanmin(self.trade_table.Return.values) if trades !=0 else 0.0
+        avgTrade = np.nanmean(self.trade_table.Return.values) if trades !=0 else 0.0
+        profitFactor = sum([i for i in self.trade_table.Return.values if i > 0]) / abs(sum([i for i in self.trade_table.Return.values if i < 0])) if trades != 0 else 0.0
+        winLossRatio = np.mean([i for i in self.trade_table.Return.values if i > 0]) / abs(np.mean([i for i in self.trade_table.Return.values if i < 0])) if trades != 0 else 0.0
         sharpe = (ret - self.rf) / vol if vol != 0 else 0.0
         sortino = (ret - self.rf) / volNeg if volNeg != 0 else 0.0
         calmar = ret / mdd if mdd != 0 else 0.0
@@ -136,3 +138,15 @@ class QuantReport:
         逐筆交易資料
         """
         return self.trade_table
+    
+    def best_trade(self):
+        """
+        最佳交易數據
+        """
+        return self.trade_table.iloc[self.trade_table.Return.idxmax()]
+    
+    def worst_trade(self):
+        """
+        最差交易數據
+        """
+        return self.trade_table.iloc[self.trade_table.Return.idxmin()]

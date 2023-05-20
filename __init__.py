@@ -5,6 +5,7 @@ import numpy as np
 from BBQuant.dataframe import QuantDataFrame
 from BBQuant.backtest import QuantBacktest
 
+
 def get(data: pd.DataFrame, column: str):
     """
     將需要的欄位轉為樞紐表 (Index: 時間, Columns: 標的)
@@ -24,8 +25,17 @@ def get(data: pd.DataFrame, column: str):
         df = df.replace('', np.nan).ffill().astype(np.float64) 
         return QuantDataFrame(df)
     
-def setting(trade_price: QuantDataFrame, take_profit: float = np.inf, stop_loss: float = np.inf, fee: float = 0.001425, tax: float = 0.003, rf: float = 0.015):
+def setting(trade_price: QuantDataFrame, freq: str = 'D', nstocks: int = None, rank: QuantDataFrame = None, take_profit: float = np.inf, stop_loss: float = np.inf, fee: float = 0.001425, tax: float = 0.003, rf: float = 0.015):
     """
-    設定回測變數: 進出場價格、停利條件、停損條件、手續費、交易稅、無風險利率
+    設定回測變數
+    trade_price: 進出場價格
+    freq: 策略頻率
+    nstocks: 持有檔數上限
+    rank: 優先篩選條件
+    take_profit: 停利條件
+    stop_loss: 停損條件
+    fee: 手續費
+    tax: 交易稅
+    rf: 無風險利率
     """
-    return QuantBacktest(trade_price, take_profit, stop_loss, fee, tax, rf)
+    return QuantBacktest(trade_price, freq, nstocks, rank, take_profit, stop_loss, fee, tax, rf)
