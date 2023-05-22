@@ -13,6 +13,7 @@ class QuantDataFrame:
     """
     def __init__(self, data: pd.DataFrame):
         self.data = data
+        self.data.index = pd.to_datetime(data.index)
 
     def __neg__(self):
         """
@@ -285,14 +286,21 @@ class QuantDataFrame:
         df = self.data.shift(n)
         return QuantDataFrame(df)
 
-    def maximum(self, n):
+    def sum(self, n):
+        """
+        前Ｎ日總和
+        """
+        df = self.data.rolling(n).sum()
+        return QuantDataFrame(df)
+
+    def max(self, n):
         """
         前Ｎ日最大值
         """
         df = self.data.rolling(n).max()
         return QuantDataFrame(df)
         
-    def minimum(self, n):
+    def min(self, n):
         """
         前Ｎ日最小值
         """

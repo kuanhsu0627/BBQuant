@@ -10,7 +10,7 @@ class QuantReport:
     
     def __init__(self, payoff_table: pd.DataFrame, equity_table: pd.DataFrame, trade_table: pd.DataFrame, rf: float):
         """
-        每日報酬表、每日淨值表、每筆交易報酬、手續費、交易稅、無風險利率
+        每日報酬表、每日淨值表、逐筆交易明細、無風險利率
         """
         self.payoff_table = payoff_table
         self.equity_table = equity_table

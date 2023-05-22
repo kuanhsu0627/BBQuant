@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import platform
+from typing_extensions import Literal
 from BBQuant.dataframe import QuantDataFrame
 from BBQuant.report import QuantReport
 
@@ -26,71 +27,71 @@ class QuantBacktest:
 
     def strategy(self, entry: QuantDataFrame, exit: QuantDataFrame = None):
         """
-        產生持有部位表
+        每日持有部位表
         """
-        try:
-            if exit == None:
-                exit = QuantDataFrame(pd.DataFrame(True, index=entry.data.index, columns=entry.data.columns))
+        # try:
+        if exit == None:
+            exit = QuantDataFrame(pd.DataFrame(True, index=entry.data.index, columns=entry.data.columns))
 
-            if self.rank == None:
-                self.rank = QuantDataFrame(pd.DataFrame(1, index=entry.data.index, columns=entry.data.columns))
+        if self.rank == None:
+            self.rank = QuantDataFrame(pd.DataFrame(1, index=entry.data.index, columns=entry.data.columns))
 
-            price = self.trade_price.data
-            ranking = self.rank.data
+        price = self.trade_price.data
+        ranking = self.rank.data
 
-            ### 進出場條件
-            entries = entry.data.resample(self.freq).ffill()
-            exits = exit.data.resample(self.freq).ffill()
-            union_index = entries.index.union(exits.index)
-            intersect_col = entries.columns.intersection(exits.columns)
-            entries = entries.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            exits = exits.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            entries = entries.astype(int).replace(0, np.nan)
-            exits = exits.astype(int).replace(0, np.nan).replace(1, 0)
-            position = entries.copy()
-            position.update(exits, overwrite=False)
-            position = position.ffill().shift(1).fillna(0)
-            position = position.resample('D').ffill()
-            ranking = ranking.resample('D').ffill()
-            intersect_index = position.index.intersection(price.index)
-            intersect_col = position.columns.intersection(price.columns)
-            position = position.reindex(index=intersect_index, columns=intersect_col)
-            index = position[position.sum(axis=1) != 0].index[0]
-            position = position.loc[index:]
-            position.iloc[-1] = 0
+        ### 進出場條件
+        entries = entry.data.resample(self.freq).ffill()
+        exits = exit.data.resample(self.freq).ffill()
+        union_index = entries.index.union(exits.index)
+        intersect_col = entries.columns.intersection(exits.columns)
+        entries = entries.reindex(index=union_index, columns=intersect_col, fill_value=False)
+        exits = exits.reindex(index=union_index, columns=intersect_col, fill_value=False)
+        entries = entries.astype(int).replace(0, np.nan)
+        exits = exits.astype(int).replace(0, np.nan).replace(1, 0)
+        position = entries.copy()
+        position.update(exits, overwrite=False)
+        position = position.ffill().shift(1).fillna(0)
+        position = position.resample('D').ffill()
+        ranking = ranking.resample('D').ffill()
+        intersect_index = position.index.intersection(price.index)
+        intersect_col = position.columns.intersection(price.columns)
+        position = position.reindex(index=intersect_index, columns=intersect_col)
+        index = position[position.sum(axis=1) != 0].index[0]
+        position = position.loc[index:]
+        position.iloc[-1] = 0
 
-            ### 停損停利條件 & 排名篩選條件
-            if self.nstocks == None:
-                self.nstocks = len(position.columns)
+        ### 停損停利條件 & 排名篩選條件
+        if self.nstocks == None:
+            self.nstocks = len(position.columns)
 
-            temp = ranking.iloc[ranking.index.tolist().index(position.index[0])-1]
-            ranking = ranking.reindex_like(position, method='ffill')
-            max_rank = ranking.max().max()
-            min_rank = ranking.min().min()
-            ranking = pd.DataFrame((ranking - min_rank) / (max_rank - min_rank)).fillna(0)
-            price = price.reindex_like(position)
-            price_arr = np.array(price)
-            entry = np.array((position != 0) & (position.shift(1) == 0))
-            waiting = temp[position.values[0] == 1].nlargest(self.nstocks).reindex_like(temp).notna()
-            position.iloc[0][~waiting] = 0
-            entry_price = np.full(position.shape[1], np.nan)
-            entry_price[position.values[0] == 1] = price_arr[0][position.values[0] == 1]
+        temp = ranking.iloc[ranking.index.tolist().index(position.index[0])-1]
+        ranking = ranking.reindex_like(position, method='ffill')
+        max_rank = ranking.max().max()
+        min_rank = ranking.min().min()
+        ranking = pd.DataFrame((ranking - min_rank) / (max_rank - min_rank)).fillna(0)
+        price = price.reindex_like(position)
+        price_arr = np.array(price)
+        entry = np.array((position != 0) & (position.shift(1) == 0))
+        waiting = temp[position.values[0] == 1].nlargest(self.nstocks).reindex_like(temp).notna()
+        position.iloc[0][~waiting] = 0
+        entry_price = np.full(position.shape[1], np.nan)
+        entry_price[position.values[0] == 1] = price_arr[0][position.values[0] == 1]
 
-            for i in range(1, position.shape[0]-1):
-                position.iloc[i][(position.iloc[i-1] == 0) & (entry[i] == False)] = 0
-                if position.iloc[i].sum() > self.nstocks:
-                    now = int(position.iloc[i].sum() - sum(entry[i]))
-                    waiting = ranking.iloc[i-1][entry[i] == True]
-                    waiting = waiting.nlargest(self.nstocks-now).reindex_like(ranking.iloc[i]).notna()
-                    position.iloc[i][(~waiting) & (entry[i] == True)] = 0
-                entry_price[(entry[i] == True) & (position.values[i] == 1)] = price_arr[i][(entry[i] == True) & (position.values[i] == 1)]          
-                temp = np.full(position.shape[1], np.nan)
-                temp[position.values[i] == 1] = price_arr[i][position.values[i] == 1] / entry_price[position.values[i] == 1]
-                position.iloc[i+1][(temp > 1 + self.take_profit) | (temp < 1 - self.stop_loss)] = 0 
+        for i in range(1, position.shape[0]-1):
+            position.iloc[i][(position.iloc[i-1] == 0) & (entry[i] == False)] = 0
+            if position.iloc[i].sum() > self.nstocks:
+                now = int(position.iloc[i].sum() - sum(entry[i]))
+                waiting = ranking.iloc[i-1][entry[i] == True]
+                waiting = waiting.nlargest(self.nstocks-now).reindex_like(ranking.iloc[i]).notna()
+                position.iloc[i][(~waiting) & (entry[i] == True)] = 0
+            entry_price[(entry[i] == True) & (position.values[i] == 1)] = price_arr[i][(entry[i] == True) & (position.values[i] == 1)]          
+            temp = np.full(position.shape[1], np.nan)
+            temp[position.values[i] == 1] = price_arr[i][position.values[i] == 1] / entry_price[position.values[i] == 1]
+            position.iloc[i+1][(temp > 1 + self.take_profit) | (temp < 1 - self.stop_loss)] = 0 
                 
-        except:
-            print(f'There is NO entry signal!\n')
-            position = pd.DataFrame(0, index=price.index, columns=price.columns)
+        # except:
+            # print(f'There is NO entry signal!\n')
+            # position = pd.DataFrame(0, index=price.index, columns=price.columns)
 
         return position   
     
@@ -208,8 +209,7 @@ class QuantBacktest:
                 plt.plot(report.equity_table.Strategy, label='持有檔數上限 = '+str(label_list[i]))
             plt.legend()
             plt.show()
-
+            
         else:
 
-            print(f'Wrong command for type. No such function.')
-            
+            print(f'No sunch choice for optimization.')
