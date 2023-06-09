@@ -4,9 +4,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import platform
-from typing_extensions import Literal
 from BBQuant.dataframe import QuantDataFrame
 from BBQuant.report import QuantReport
+
+
+if platform.system() == "Windows":
+    plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei']
+    plt.rcParams['axes.unicode_minus'] = False
+elif platform.system() == "Darwin":
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
 
 
 class QuantBacktest:
@@ -29,69 +36,70 @@ class QuantBacktest:
         """
         每日持有部位表
         """
-        # try:
-        if exit == None:
-            exit = QuantDataFrame(pd.DataFrame(True, index=entry.data.index, columns=entry.data.columns))
+        try:
+            if exit == None:
+                exit = QuantDataFrame(pd.DataFrame(True, index=entry.data.index, columns=entry.data.columns))
 
-        if self.rank == None:
-            self.rank = QuantDataFrame(pd.DataFrame(1, index=entry.data.index, columns=entry.data.columns))
+            if self.rank == None:
+                self.rank = QuantDataFrame(pd.DataFrame(1, index=entry.data.index, columns=entry.data.columns))
 
-        price = self.trade_price.data
-        ranking = self.rank.data
+            price = self.trade_price.data
+            ranking = self.rank.data
 
-        ### 進出場條件
-        entries = entry.data.resample(self.freq).ffill()
-        exits = exit.data.resample(self.freq).ffill()
-        union_index = entries.index.union(exits.index)
-        intersect_col = entries.columns.intersection(exits.columns)
-        entries = entries.reindex(index=union_index, columns=intersect_col, fill_value=False)
-        exits = exits.reindex(index=union_index, columns=intersect_col, fill_value=False)
-        entries = entries.astype(int).replace(0, np.nan)
-        exits = exits.astype(int).replace(0, np.nan).replace(1, 0)
-        position = entries.copy()
-        position.update(exits, overwrite=False)
-        position = position.ffill().shift(1).fillna(0)
-        position = position.resample('D').ffill()
-        ranking = ranking.resample('D').ffill()
-        intersect_index = position.index.intersection(price.index)
-        intersect_col = position.columns.intersection(price.columns)
-        position = position.reindex(index=intersect_index, columns=intersect_col)
-        index = position[position.sum(axis=1) != 0].index[0]
-        position = position.loc[index:]
-        position.iloc[-1] = 0
+            ### 進出場條件
+            entries = entry.data.resample(self.freq).ffill()
+            exits = exit.data.resample(self.freq).ffill()
+            union_index = entries.index.union(exits.index)
+            intersect_col = entries.columns.intersection(exits.columns)
+            entries = entries.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            exits = exits.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            entries = entries.astype(int).replace(0, np.nan)
+            exits = exits.astype(int).replace(0, np.nan).replace(1, 0)
+            position = entries.copy()
+            position.update(exits, overwrite=False)
+            position = position.ffill().shift(1).fillna(0)
+            position = position.resample('D').ffill()
+            ranking = ranking.resample('D').ffill()
+            intersect_index = position.index.intersection(price.index)
+            intersect_col = position.columns.intersection(price.columns)
+            position = position.reindex(index=intersect_index, columns=intersect_col)
+            ranking = ranking.reindex(columns=position.columns)
+            index = position[position.sum(axis=1) != 0].index[0]
+            position = position.loc[index:]
+            position.iloc[-1] = 0
 
-        ### 停損停利條件 & 排名篩選條件
-        if self.nstocks == None:
-            self.nstocks = len(position.columns)
+            ### 停損停利條件 & 排名篩選條件
+            if self.nstocks == None:
+                self.nstocks = len(position.columns)
 
-        temp = ranking.iloc[ranking.index.tolist().index(position.index[0])-1]
-        ranking = ranking.reindex_like(position, method='ffill')
-        max_rank = ranking.max().max()
-        min_rank = ranking.min().min()
-        ranking = pd.DataFrame((ranking - min_rank) / (max_rank - min_rank)).fillna(0)
-        price = price.reindex_like(position)
-        price_arr = np.array(price)
-        entry = np.array((position != 0) & (position.shift(1) == 0))
-        waiting = temp[position.values[0] == 1].nlargest(self.nstocks).reindex_like(temp).notna()
-        position.iloc[0][~waiting] = 0
-        entry_price = np.full(position.shape[1], np.nan)
-        entry_price[position.values[0] == 1] = price_arr[0][position.values[0] == 1]
+            temp = ranking.iloc[ranking.index.tolist().index(position.index[0])-1]
+            ranking = ranking.reindex_like(position, method='ffill')
+            max_rank = ranking.max().max()
+            min_rank = ranking.min().min()
+            ranking = pd.DataFrame((ranking - min_rank) / (max_rank - min_rank)).fillna(0)
+            price = price.reindex_like(position)
+            price_arr = np.array(price)
+            entry = np.array((position != 0) & (position.shift(1) == 0))
+            waiting = temp[position.values[0] == 1].nlargest(self.nstocks).reindex_like(temp).notna()
+            position.iloc[0][~waiting] = 0
+            entry_price = np.full(position.shape[1], np.nan)
+            entry_price[position.values[0] == 1] = price_arr[0][position.values[0] == 1]
 
-        for i in range(1, position.shape[0]-1):
-            position.iloc[i][(position.iloc[i-1] == 0) & (entry[i] == False)] = 0
-            if position.iloc[i].sum() > self.nstocks:
-                now = int(position.iloc[i].sum() - sum(entry[i]))
-                waiting = ranking.iloc[i-1][entry[i] == True]
-                waiting = waiting.nlargest(self.nstocks-now).reindex_like(ranking.iloc[i]).notna()
-                position.iloc[i][(~waiting) & (entry[i] == True)] = 0
-            entry_price[(entry[i] == True) & (position.values[i] == 1)] = price_arr[i][(entry[i] == True) & (position.values[i] == 1)]          
-            temp = np.full(position.shape[1], np.nan)
-            temp[position.values[i] == 1] = price_arr[i][position.values[i] == 1] / entry_price[position.values[i] == 1]
-            position.iloc[i+1][(temp > 1 + self.take_profit) | (temp < 1 - self.stop_loss)] = 0 
+            for i in range(1, position.shape[0]-1):
+                position.iloc[i][(position.iloc[i-1] == 0) & (entry[i] == False)] = 0
+                if position.iloc[i].sum() > self.nstocks:
+                    now = int(position.iloc[i].sum() - sum(entry[i]))
+                    waiting = ranking.iloc[i-1][entry[i] == True]
+                    waiting = waiting.nlargest(self.nstocks-now).reindex_like(ranking.iloc[i]).notna()
+                    position.iloc[i][(~waiting) & (entry[i] == True)] = 0
+                entry_price[(entry[i] == True) & (position.values[i] == 1)] = price_arr[i][(entry[i] == True) & (position.values[i] == 1)]          
+                temp = np.full(position.shape[1], np.nan)
+                temp[position.values[i] == 1] = price_arr[i][position.values[i] == 1] / entry_price[position.values[i] == 1]
+                position.iloc[i+1][(temp > 1 + self.take_profit) | (temp < 1 - self.stop_loss)] = 0
                 
-        # except:
-            # print(f'There is NO entry signal!\n')
-            # position = pd.DataFrame(0, index=price.index, columns=price.columns)
+        except:
+            print(f'There is NO entry signal!\n')
+            position = pd.DataFrame(0, index=price.index, columns=price.columns)
 
         return position   
     
@@ -149,7 +157,7 @@ class QuantBacktest:
         payoff = pd.DataFrame(payoff_arr*weight_arr, index=payoff.index, columns=payoff.columns).fillna(0)
         payoff_table = pd.DataFrame()
         payoff_table['Strategy'] = payoff.sum(axis=1)
-        taiex = pd.read_csv('/Users/kuanhsu/Desktop/code/Python/FILE/報酬指數.txt')
+        taiex = pd.read_feather('c:\\Users\\warrantnew.brk\\Desktop\\code\\PROJ\\報酬指數.ftr')
         taiex = taiex.set_index('datetime', drop=True)
         taiex.index = pd.to_datetime(taiex.index)
         taiex = taiex.reindex(weight.index)
@@ -157,26 +165,43 @@ class QuantBacktest:
         taiex = taiex.fillna(0)
         payoff_table['Benchmark'] = taiex.Payoff.values
         equity_table = payoff_table.cumsum() + 1
-        return QuantReport(payoff_table, equity_table, trade_table, self.rf)
-        
+        hold_table = position.sum(axis=1)
+        return QuantReport(payoff_table, equity_table, trade_table, hold_table, self.rf)
+    
 
-    def optimize(self, entry: QuantDataFrame, exit: QuantDataFrame = None, type: str = 'stop'):
+    def bestsim(self, entry: list, exit: list = None, label: list = None):
+        """
+        對多個進出場條件進行最佳化
+        """
+        if exit == None:
+            exit = [None] * len(entry)
+        if label == None:
+            label = ['cond '+str(i+1) for i in list(range(len(entry)))]
+
+        cond_list = list(zip(entry, exit))
+        plt.style.use('bmh')
+        plt.figure(figsize=(12, 6), dpi=200)
+        plt.ylabel('Equity')
+        plt.xlabel('Time')
+        plt.title('進出場條件 - 最佳化', fontsize=16)
+        for i in range(len(cond_list)):
+            position = self.strategy(cond_list[i][0], cond_list[i][1])
+            report = self.sim(position)
+            plt.plot(report.equity_table.Strategy, label=label[i])
+        plt.legend()
+        plt.show()
+
+
+    def optimize(self, type: str, entry: QuantDataFrame, exit: QuantDataFrame = None):
         """
         對特定條件進行最佳化
         'stop': 停利/停損
         'nstocks': 持有檔數上限
         """
-        ### 顯示中文字體
-        if platform.system() == "Windows":
-            plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei']
-            plt.rcParams['axes.unicode_minus'] = False
 
-        elif platform.system() == "Darwin":
-            plt.rcParams['font.sans-serif'] = ['SimHei']
-            plt.rcParams['axes.unicode_minus'] = False
- 
+        assert type in ['stop', 'nstocks'], 'No such type for optimization'
+
         if type == 'stop':
-
             pair_list = [(0.20, 0.10), (0.20, 0.05), (0.10, 0.05), (np.inf, 0.10), (np.inf, 0.05), (np.inf, np.inf)]
             label_list = [('20%', '10%'), ('20%', ' 5%'), ('10%', ' 5%'), ('  X', '10%'), ('  X', ' 5%'), ('  X', '  X')]
             plt.style.use('bmh')
@@ -193,8 +218,7 @@ class QuantBacktest:
             plt.legend()
             plt.show()
 
-        elif type == 'nstocks':
-
+        if type == 'nstocks':
             num_list = [5, 10, 20, 50, 100, None]
             label_list = ['5', '10', '20', '50', '100', 'NO']
             plt.style.use('bmh')
@@ -209,7 +233,3 @@ class QuantBacktest:
                 plt.plot(report.equity_table.Strategy, label='持有檔數上限 = '+str(label_list[i]))
             plt.legend()
             plt.show()
-            
-        else:
-
-            print(f'No sunch choice for optimization.')

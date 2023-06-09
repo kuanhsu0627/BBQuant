@@ -15,11 +15,23 @@ class QuantDataFrame:
         self.data = data
         self.data.index = pd.to_datetime(data.index)
 
+    def __pos__(self):
+        """
+        ex. +df
+        """
+        return QuantDataFrame(+self.data)
+
     def __neg__(self):
         """
         ex. -df
         """
         return QuantDataFrame(-self.data)
+    
+    def __invert__(self):
+        """
+        ex. ~df
+        """
+        return QuantDataFrame(~self.data)
 
     def __add__(self, other):
         """
@@ -286,7 +298,7 @@ class QuantDataFrame:
         df = self.data.shift(n)
         return QuantDataFrame(df)
 
-    def sum(self, n):
+    def total(self, n):
         """
         前Ｎ日總和
         """
@@ -307,6 +319,13 @@ class QuantDataFrame:
         df = self.data.rolling(n).min()
         return QuantDataFrame(df)
     
+    def diff(self, n):
+        """
+        今日與前Ｎ日數值的差
+        """
+        df = (self.data - self.data.shift(n)).dropna(how='all')
+        return QuantDataFrame(df)
+    
     def average(self, n):
         """
         前Ｎ日平均值
@@ -318,28 +337,37 @@ class QuantDataFrame:
         """
         今日數值是否比前Ｎ日低
         """
-        df = operator.__lt__(self.data, self.data.shift(n))
+        df = self.data < self.data.shift(n)
+        # df = operator.__lt__(self.data, self.data.shift(n))
         return QuantDataFrame(df)
 
     def rise(self, n=1):
         """
         今日數值是否比前Ｎ日高
         """
-        df = operator.__gt__(self.data, self.data.shift(n))
+        df = self.data > self.data.shift(n)
+        # df = operator.__gt__(self.data, self.data.shift(n))
         return QuantDataFrame(df)
     
     def largest(self, n):
         """
         取每列數值中最大的前Ｎ筆
         """   
-        df = self.data.astype(float).apply(lambda x: x.nlargest(n), axis=1).reindex_like(self).notna()
+        df = self.data.astype(float).apply(lambda x: x.nlargest(n), axis=1).reindex_like(self.data).notna()
         return QuantDataFrame(df)
     
     def smallest(self, n):
         """
         取每列數值中最小的前Ｎ筆
         """
-        df = self.data.astype(float).apply(lambda x: x.nsmallest(n), axis=1).reindex_like(self).notna()
+        df = self.data.astype(float).apply(lambda x: x.nsmallest(n), axis=1).reindex_like(self.data).notna()
+        return QuantDataFrame(df)
+
+    def rank(self, n):
+        """
+        取每列數值中最大的前Ｎ等分 ex. 前50% -> 0.5
+        """
+        df = self.data.rank(axis=1, ascending=False) <= len(self.data.columns) * n
         return QuantDataFrame(df)
     
     def sustain(self, n):
