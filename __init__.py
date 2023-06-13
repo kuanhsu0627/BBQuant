@@ -16,14 +16,14 @@ def get(data: pd.DataFrame, column: str):
     ### 日資料
     if data.datetime[0].hour == 0:
         df = data.pivot(index='datetime', columns='asset', values=column)
-        df = df.replace('', np.nan).ffill().astype(np.float64)
+        df = df.replace('', np.nan).ffill().astype(float)
         return QuantDataFrame(df)
     
     ### 日內資料
     else:   
         func = {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}
         df = data.pivot_table(index=data.datetime.dt.date, columns='asset', values=column, aggfunc=func[column])
-        df = df.replace('', np.nan).ffill().astype(np.float64) 
+        df = df.replace('', np.nan).ffill().astype(float) 
         return QuantDataFrame(df)
 
 def transform(data: pd.DataFrame):

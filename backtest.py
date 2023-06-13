@@ -57,13 +57,12 @@ class QuantBacktest:
             exits = exits.astype(int).replace(0, np.nan).replace(1, 0)
             position = entries.copy()
             position.update(exits, overwrite=False)
-            position = position.ffill().shift(1).fillna(0)
+            position = position.ffill().fillna(0)
             position = position.resample('D').ffill()
-            ranking = ranking.resample('D').ffill()
             intersect_index = position.index.intersection(price.index)
             intersect_col = position.columns.intersection(price.columns)
             position = position.reindex(index=intersect_index, columns=intersect_col)
-            ranking = ranking.reindex(columns=position.columns)
+            position = position.shift(1).fillna(0)
             index = position[position.sum(axis=1) != 0].index[0]
             position = position.loc[index:]
             position.iloc[-1] = 0
@@ -72,6 +71,8 @@ class QuantBacktest:
             if self.nstocks == None:
                 self.nstocks = len(position.columns)
 
+            ranking = ranking.resample('D').ffill()
+            ranking = ranking.reindex(columns=position.columns).astype(float)
             temp = ranking.iloc[ranking.index.tolist().index(position.index[0])-1]
             ranking = ranking.reindex_like(position, method='ffill')
             max_rank = ranking.max().max()
@@ -157,7 +158,7 @@ class QuantBacktest:
         payoff = pd.DataFrame(payoff_arr*weight_arr, index=payoff.index, columns=payoff.columns).fillna(0)
         payoff_table = pd.DataFrame()
         payoff_table['Strategy'] = payoff.sum(axis=1)
-        taiex = pd.read_feather('c:\\Users\\warrantnew.brk\\Desktop\\code\\PROJ\\報酬指數.ftr')
+        taiex = pd.read_feather('/Users/kuanhsu/Desktop/code/Python/FILE/報酬指數.ftr')
         taiex = taiex.set_index('datetime', drop=True)
         taiex.index = pd.to_datetime(taiex.index)
         taiex = taiex.reindex(weight.index)

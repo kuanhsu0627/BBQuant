@@ -113,16 +113,16 @@ class QuantDataFrame:
         if isinstance(other, (pd.DataFrame)):
             union_index = self.data.index.union(other.index)
             intersect_col = self.data.columns.intersection(other.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other = other.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other = other.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__gt__(self.data, other)
             return QuantDataFrame(df)
 
         if isinstance(other, (QuantDataFrame)):
             union_index = self.data.index.union(other.data.index)
             intersect_col = self.data.columns.intersection(other.data.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other.data = other.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other.data = other.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__gt__(self.data, other.data)
             return QuantDataFrame(df)
 
@@ -138,16 +138,16 @@ class QuantDataFrame:
         if isinstance(other, (pd.DataFrame)):
             union_index = self.data.index.union(other.index)
             intersect_col = self.data.columns.intersection(other.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other = other.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other = other.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__lt__(self.data, other)
             return QuantDataFrame(df)
 
         if isinstance(other, (QuantDataFrame)):
             union_index = self.data.index.union(other.data.index)
             intersect_col = self.data.columns.intersection(other.data.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other.data = other.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other.data = other.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__lt__(self.data, other.data)
             return QuantDataFrame(df)
     
@@ -163,16 +163,16 @@ class QuantDataFrame:
         if isinstance(other, (pd.DataFrame)):
             union_index = self.data.index.union(other.index)
             intersect_col = self.data.columns.intersection(other.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other = other.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other = other.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__eq__(self.data, other)
             return QuantDataFrame(df)
 
         if isinstance(other, (QuantDataFrame)):
             union_index = self.data.index.union(other.data.index)
             intersect_col = self.data.columns.intersection(other.data.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other.data = other.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other.data = other.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__eq__(self.data, other.data)
             return QuantDataFrame(df)
     
@@ -188,16 +188,16 @@ class QuantDataFrame:
         if isinstance(other, (pd.DataFrame)):
             union_index = self.data.index.union(other.index)
             intersect_col = self.data.columns.intersection(other.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other = other.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other = other.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__ne__(self.data, other)
             return QuantDataFrame(df)
 
         if isinstance(other, (QuantDataFrame)):
             union_index = self.data.index.union(other.data.index)
             intersect_col = self.data.columns.intersection(other.data.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other.data = other.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other.data = other.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__ne__(self.data, other.data)
             return QuantDataFrame(df)
     
@@ -213,16 +213,16 @@ class QuantDataFrame:
         if isinstance(other, (pd.DataFrame)):
             union_index = self.data.index.union(other.index)
             intersect_col = self.data.columns.intersection(other.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other = other.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other = other.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__ge__(self.data, other)
             return QuantDataFrame(df)
 
         if isinstance(other, (QuantDataFrame)):
             union_index = self.data.index.union(other.data.index)
             intersect_col = self.data.columns.intersection(other.data.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other.data = other.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other.data = other.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__ge__(self.data, other.data)
             return QuantDataFrame(df)
 
@@ -238,16 +238,16 @@ class QuantDataFrame:
         if isinstance(other, (pd.DataFrame)):
             union_index = self.data.index.union(other.index)
             intersect_col = self.data.columns.intersection(other.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other = other.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other = other.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__le__(self.data, other)
             return QuantDataFrame(df)
 
         if isinstance(other, (QuantDataFrame)):
             union_index = self.data.index.union(other.data.index)
             intersect_col = self.data.columns.intersection(other.data.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other.data = other.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other.data = other.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = operator.__le__(self.data, other.data)
             return QuantDataFrame(df)
 
@@ -258,16 +258,16 @@ class QuantDataFrame:
         if isinstance(other, (pd.DataFrame)):
             union_index = self.data.index.union(other.index)
             intersect_col = self.data.columns.intersection(other.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other = other.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other = other.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = np.logical_and(self.data, other)
             return QuantDataFrame(df)
 
         if isinstance(other, (QuantDataFrame)):
             union_index = self.data.index.union(other.data.index)
             intersect_col = self.data.columns.intersection(other.data.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other.data = other.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other.data = other.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = np.logical_and(self.data, other.data)
             return QuantDataFrame(df)
 
@@ -278,16 +278,16 @@ class QuantDataFrame:
         if isinstance(other, (pd.DataFrame)):
             union_index = self.data.index.union(other.index)
             intersect_col = self.data.columns.intersection(other.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other = other.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other = other.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = np.logical_or(self.data, other)
             return QuantDataFrame(df)
 
         if isinstance(other, (QuantDataFrame)):
             union_index = self.data.index.union(other.data.index)
             intersect_col = self.data.columns.intersection(other.data.columns)
-            self.data = self.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
-            other.data = other.data.reindex(index=union_index, columns=intersect_col, fill_value=False)
+            self.data = self.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
+            other.data = other.data.reindex(index=union_index, columns=intersect_col, method='ffill').fillna(False)
             df = np.logical_or(self.data, other.data)
             return QuantDataFrame(df)
 
@@ -338,7 +338,6 @@ class QuantDataFrame:
         今日數值是否比前Ｎ日低
         """
         df = self.data < self.data.shift(n)
-        # df = operator.__lt__(self.data, self.data.shift(n))
         return QuantDataFrame(df)
 
     def rise(self, n=1):
@@ -346,7 +345,6 @@ class QuantDataFrame:
         今日數值是否比前Ｎ日高
         """
         df = self.data > self.data.shift(n)
-        # df = operator.__gt__(self.data, self.data.shift(n))
         return QuantDataFrame(df)
     
     def largest(self, n):
@@ -374,8 +372,14 @@ class QuantDataFrame:
         """
         條件持續滿足Ｎ天
         """
-        df = operator.__ge__(self.data.rolling(n).sum(), n)
+        df = self.data.rolling(n).sum() >= n
         return QuantDataFrame(df)     
+
+    def view(self, n):
+        """
+        顯示前Ｎ筆資料
+        """
+        return self.data.head(n) 
         
     def __repr__(self):
         display(self.data)
