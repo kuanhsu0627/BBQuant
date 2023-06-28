@@ -348,7 +348,7 @@ setting(trade_price: QuantDataFrame, freq: str = 'D', nstocks: int = None, rank:
 
   調倉頻率，預設日頻率 <p align="right">`Type: str`</p>
 
-- **rank**
+- **nstocks**
 
   持有檔數上限，預設無上限 <p align="right">`Type: int`</p>
 
