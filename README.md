@@ -294,7 +294,6 @@ worst_trade()
 <br>
 
 ## **函式庫**
-<br>
 
 ### **get**  
 <br>
