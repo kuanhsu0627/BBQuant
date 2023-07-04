@@ -17,10 +17,16 @@ elif platform.system() == "Darwin":
 
 
 class QuantBacktest:
+    """
+    strategy(): 每日持有部位表
+    sim(): 模擬回測績效並產生各類報表
+    bestsim(): 對多個進出場條件進行最佳化
+    optimize(): 對特定條件進行最佳化
+    """
     
     def __init__(self, trade_price: QuantDataFrame, freq: str, nstocks: int, rank: QuantDataFrame, take_profit: float, stop_loss: float, fee: float, tax: float, rf: float):
         """
-        進出場價格、策略頻率、持有檔數上限、停利條件、停損條件、手續費、交易稅、無風險利率
+        進出場價格、調倉頻率、持有檔數上限、停利條件、停損條件、手續費、交易稅、無風險利率
         """
         self.trade_price = trade_price
         self.freq = freq
@@ -34,7 +40,7 @@ class QuantBacktest:
 
     def strategy(self, entry: QuantDataFrame, exit: QuantDataFrame = None):
         """
-        每日持有部位表
+        產生每日持有部位表
         """
         try:
             if exit == None:
@@ -73,7 +79,7 @@ class QuantBacktest:
 
             ranking = ranking.resample('D').ffill()
             ranking = ranking.reindex(columns=position.columns).astype(float)
-            temp = ranking.iloc[ranking.index.tolist().index(position.index[0])-1]
+            temp = ranking.iloc[ranking.index.tolist().index(position.index[0])-1] if position.index[0] in ranking.index.tolist() else position.iloc[0].replace(1, 0)
             ranking = ranking.reindex_like(position, method='ffill')
             max_rank = ranking.max().max()
             min_rank = ranking.min().min()
@@ -107,7 +113,7 @@ class QuantBacktest:
 
     def sim(self, position: pd.DataFrame):
         """
-        回測數據 & 淨值走勢圖
+        模擬回測績效並產生各類報表
         """
         price = self.trade_price.data
         weight = position.div(position.sum(axis=1), axis=0).fillna(0)
@@ -172,7 +178,7 @@ class QuantBacktest:
 
     def bestsim(self, entry: list, exit: list = None, label: list = None):
         """
-        對多個進出場條件進行最佳化
+        對多個進出場條件組合進行最佳化
         """
         if exit == None:
             exit = [None] * len(entry)
@@ -198,9 +204,10 @@ class QuantBacktest:
         對特定條件進行最佳化
         'stop': 停利/停損
         'nstocks': 持有檔數上限
+        'freq': 調倉頻率
         """
 
-        assert type in ['stop', 'nstocks'], 'No such type for optimization'
+        assert type in ['stop', 'nstocks', 'freq'], 'No such type for optimization'
 
         if type == 'stop':
             pair_list = [(0.20, 0.10), (0.20, 0.05), (0.10, 0.05), (np.inf, 0.10), (np.inf, 0.05), (np.inf, np.inf)]
@@ -232,5 +239,21 @@ class QuantBacktest:
                 position = self.strategy(entry, exit)
                 report = self.sim(position)
                 plt.plot(report.equity_table.Strategy, label='持有檔數上限 = '+str(label_list[i]))
+            plt.legend()
+            plt.show()
+
+        if type == 'freq':
+            str_list = ['D', 'W', 'M', 'Q', 'Y']
+            label_list = ['日', '週', '月', '季', '年']
+            plt.style.use('bmh')
+            plt.figure(figsize=(12, 6), dpi=200)
+            plt.ylabel('Equity')
+            plt.xlabel('Time')
+            plt.title('調倉頻率 - 最佳化', fontsize=16)
+            for i in range(len(str_list)):
+                self.freq = str_list[i]
+                position = self.strategy(entry, exit)
+                report = self.sim(position)
+                plt.plot(report.equity_table.Strategy, label='調倉頻率 = '+str(label_list[i]))
             plt.legend()
             plt.show()

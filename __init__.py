@@ -36,7 +36,7 @@ def setting(trade_price: QuantDataFrame, freq: str = 'D', nstocks: int = None, r
     """
     設定回測變數
     trade_price: 進出場價格
-    freq: 策略頻率
+    freq: 調倉頻率
     nstocks: 持有檔數上限
     rank: 優先篩選條件
     take_profit: 停利條件

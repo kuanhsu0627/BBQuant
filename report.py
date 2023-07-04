@@ -17,6 +17,14 @@ elif platform.system() == "Darwin":
 
 
 class QuantReport:
+    """
+    plot(): 繪製淨值走勢圖
+    analyze(): 策略報酬分析
+    stats(): 詳細回測數據
+    trades(): 逐筆交易資料
+    best_trade(): 最佳交易標的
+    worst_trade(): 最差交易標的
+    """
     
     def __init__(self, payoff_table: pd.DataFrame, equity_table: pd.DataFrame, trade_table: pd.DataFrame, hold_table: pd.Series, rf: float):
         """

@@ -9,8 +9,20 @@ from IPython.display import display
 class QuantDataFrame:
     """
     重新定義 DataFrame 運算元: +, -, *, /, >, <, ==, !=, >=, <=, &, |
-    對 Index 取聯集, Columns 取交集
+    shift(): 將資料平移Ｎ天
+    total(): 前Ｎ日總和
+    max(): 前Ｎ日最大值    
+    min(): 前Ｎ日最小值
+    diff(): 今日與前Ｎ日數值的差
+    average(): 前Ｎ日平均值
+    fall(): 今日數值是否比前Ｎ日低
+    rise(): 今日數值是否比前Ｎ日高
+    largest(): 取每列數值中最大的前Ｎ筆 
+    smallest(): 取每列數值中最小的前Ｎ筆
+    rank(): 取每列數值中最大的前Ｎ等分
+    sustain(): 條件持續滿足Ｎ天
     """
+    
     def __init__(self, data: pd.DataFrame):
         self.data = data
         self.data.index = pd.to_datetime(data.index)
